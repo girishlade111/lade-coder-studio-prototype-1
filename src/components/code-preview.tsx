@@ -77,18 +77,16 @@ export function CodePreview({
   );
 
   return (
-    <div className="flex flex-col h-full w-full bg-card rounded-lg border">
+    <Tabs value={activeTab} onValueChange={onTabChange} className="flex flex-col h-full w-full bg-card rounded-lg border">
       <div className="flex items-center justify-between p-2 border-b">
-        <Tabs value={activeTab} onValueChange={onTabChange} className="w-auto">
-          <TabsList>
-            <TabsTrigger value="code">
-              <CodeXml className="h-4 w-4 mr-2" /> Code
-            </TabsTrigger>
-            <TabsTrigger value="preview">
-              <Eye className="h-4 w-4 mr-2" /> Live Preview
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <TabsList>
+          <TabsTrigger value="code">
+            <CodeXml className="h-4 w-4 mr-2" /> Code
+          </TabsTrigger>
+          <TabsTrigger value="preview">
+            <Eye className="h-4 w-4 mr-2" /> Live Preview
+          </TabsTrigger>
+        </TabsList>
         <div className="flex items-center gap-2">
           {activeTab === 'preview' && (
             <>
@@ -171,6 +169,6 @@ export function CodePreview({
           </div>
         </TabsContent>
       </div>
-    </div>
+    </Tabs>
   );
 }
