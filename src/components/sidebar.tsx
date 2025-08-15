@@ -1,5 +1,6 @@
 'use client';
 
+import type { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -11,9 +12,12 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LadeCoderLogo } from '@/components/icons';
-import { Download, Lightbulb, Plus, Bot } from 'lucide-react';
+import { Download, Lightbulb, Plus, Bot, User, SendHorizonal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { GenerateWebsiteResult } from '@/app/actions';
+import type { ChatMessage } from '@/components/main-view';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 
 interface SidebarProps {
   isSidebarVisible: boolean;
@@ -22,6 +26,10 @@ interface SidebarProps {
   suggestions: string[];
   isSuggestionsLoading: boolean;
   generatedCode: GenerateWebsiteResult | null;
+  chatHistory: ChatMessage[];
+  onChatSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>;
+  chatForm: UseFormReturn<{ prompt: string; }, any, undefined>
+  isChatLoading: boolean;
 }
 
 export function Sidebar({
@@ -31,6 +39,10 @@ export function Sidebar({
   suggestions,
   isSuggestionsLoading,
   generatedCode,
+  chatHistory,
+  onChatSubmit,
+  chatForm,
+  isChatLoading,
 }: SidebarProps) {
   const handleExport = () => {
     if (!generatedCode) return;
@@ -75,16 +87,69 @@ export function Sidebar({
             <LadeCoderLogo className="w-8 h-8" />
             <h2 className="text-lg font-semibold">Lade Coder</h2>
           </div>
-          <Button variant="ghost" size="icon" onClick={onNewProject}>
+          <Button variant="ghost" size="icon" onClick={onNewProject} aria-label="New Project">
             <Plus className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="flex-1 mt-4 overflow-y-auto">
-          {/* Chat history would go here */}
-        </div>
+        <ScrollArea className="flex-1 my-4">
+          <div className="space-y-4 pr-4">
+            {chatHistory.map((message, index) => (
+              <div key={index} className={cn("flex items-start gap-3", message.role === 'user' ? 'justify-end' : '')}>
+                {message.role === 'ai' && (
+                  <div className="p-2 rounded-full bg-primary/10 text-primary">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                )}
+                 <p className={cn(
+                    "flex-1 text-sm pt-1 rounded-lg p-3",
+                    message.role === 'user' ? 'bg-muted text-foreground' : 'bg-background text-muted-foreground'
+                  )}>
+                    {message.content}
+                  </p>
+                {message.role === 'user' && (
+                  <div className="p-2 rounded-full bg-muted text-foreground">
+                    <User className="h-5 w-5" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+        
+        <Form {...chatForm}>
+            <form onSubmit={onChatSubmit} className="relative mt-auto">
+                <FormField
+                    control={chatForm.control}
+                    name="prompt"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Textarea
+                                    {...field}
+                                    placeholder="Ask for changes or instructions..."
+                                    className="w-full pr-12 resize-none"
+                                    disabled={isChatLoading}
+                                    suppressHydrationWarning
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+                <Button
+                    type="submit"
+                    size="icon"
+                    disabled={isChatLoading}
+                    aria-label="Send message"
+                    className="absolute bottom-2 right-2"
+                >
+                    <SendHorizonal className="h-5 w-5" />
+                </Button>
+            </form>
+        </Form>
 
-        <div className="mt-auto pt-4 border-t space-y-2">
+
+        <div className="mt-2 pt-4 border-t space-y-2">
           <Button
             variant="outline"
             className="w-full justify-start"
@@ -92,7 +157,7 @@ export function Sidebar({
             disabled={!generatedCode?.html}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export Code
+            Export
           </Button>
 
           <Sheet>
@@ -104,7 +169,7 @@ export function Sidebar({
                 disabled={!generatedCode?.html}
               >
                 <Lightbulb className="h-4 w-4 mr-2" />
-                AI Suggestions
+                Suggestions
               </Button>
             </SheetTrigger>
             <SheetContent>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   generateWebsiteAction,
   getSuggestionsAction,
+  chatAction,
   type GenerateWebsiteResult,
 } from '@/app/actions';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,11 @@ const promptSchema = z.object({
   }),
 });
 
+export interface ChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+}
+
 export default function MainView() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +46,7 @@ export default function MainView() {
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('code');
   const [currentPrompt, setCurrentPrompt] = useState('');
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof promptSchema>>({
@@ -96,21 +103,41 @@ export default function MainView() {
   const onSubmit = async (values: z.infer<typeof promptSchema>) => {
     setIsLoading(true);
     setCurrentPrompt(values.prompt);
-    setIsSubmitted(true);
+    
+    if (isSubmitted) {
+      // Handle chat interaction
+      const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', content: values.prompt }];
+      setChatHistory(newHistory);
+      form.reset();
+      
+      try {
+        const result = await chatAction(values.prompt);
+        setChatHistory([...newHistory, { role: 'ai', content: result }]);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+      }
 
-    try {
-      const result = await generateWebsiteAction(values.prompt);
-      setGeneratedCode(result);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unknown error occurred.',
-      });
-      setIsSubmitted(false);
-    } finally {
-      setIsLoading(false);
+    } else {
+      // Handle initial website generation
+      setIsSubmitted(true);
+      try {
+        const result = await generateWebsiteAction(values.prompt);
+        setGeneratedCode(result);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'An unknown error occurred.',
+        });
+        setIsSubmitted(false);
+      }
     }
+    
+    setIsLoading(false);
   };
 
   const handleGetSuggestions = async () => {
@@ -138,6 +165,7 @@ export default function MainView() {
     setDisplayedCode({ html: '', css: '', javascript: '' });
     setSuggestions([]);
     setCurrentPrompt('');
+    setChatHistory([]);
     form.reset();
     setActiveTab('code');
   };
@@ -151,6 +179,10 @@ export default function MainView() {
         suggestions={suggestions}
         isSuggestionsLoading={isSuggestionsLoading}
         generatedCode={displayedCode}
+        chatHistory={chatHistory}
+        onChatSubmit={form.handleSubmit(onSubmit)}
+        chatForm={form}
+        isChatLoading={isLoading}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header isVisible={isSubmitted} onNewProject={handleNewProject} />
@@ -185,6 +217,7 @@ export default function MainView() {
                                   placeholder="Build a modern e-commerce site for selling books..."
                                   className="w-full h-24 pr-24 resize-none text-base"
                                   disabled={isLoading}
+                                  suppressHydrationWarning
                                 />
                               </FormControl>
                               <FormMessage className="text-left" />
@@ -218,7 +251,7 @@ export default function MainView() {
             ) : (
               <CodePreview
                 code={displayedCode}
-                isLoading={isLoading}
+                isLoading={isLoading && !generatedCode}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
               />

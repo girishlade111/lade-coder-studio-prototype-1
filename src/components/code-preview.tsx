@@ -86,10 +86,10 @@ export function CodePreview({
         <div className="flex items-center justify-between p-2 border-b">
           <TabsList>
             <TabsTrigger value="code">
-              <CodeXml className="h-4 w-4 mr-2" /> Code
+              <CodeXml className="h-4 w-4" />
             </TabsTrigger>
             <TabsTrigger value="preview">
-              <Eye className="h-4 w-4 mr-2" /> Live Preview
+              <Eye className="h-4 w-4" />
             </TabsTrigger>
           </TabsList>
           <div className="flex items-center gap-2">
@@ -133,37 +133,39 @@ export function CodePreview({
           </div>
         </div>
         <div className="flex-1 overflow-auto">
-          <TabsContent value="code" className="m-0">
-            {isLoading && !code.html ? (
-              <CodeSkeleton />
-            ) : (
-              <div className="font-mono text-sm">
-                <div className="p-4 bg-muted/50 border-b">
-                  <h3 className="font-sans font-semibold text-foreground">
-                    HTML
-                  </h3>
+          <TabsContent value="code" className="m-0 h-full">
+            <div className="h-full overflow-auto">
+              {isLoading && !code.html ? (
+                <CodeSkeleton />
+              ) : (
+                <div className="font-mono text-sm">
+                  <div className="p-4 bg-muted/50 border-b">
+                    <h3 className="font-sans font-semibold text-foreground">
+                      HTML
+                    </h3>
+                  </div>
+                  <pre className="p-4 overflow-auto">
+                    <code>{code.html}</code>
+                  </pre>
+                  <div className="p-4 bg-muted/50 border-b">
+                    <h3 className="font-sans font-semibold text-foreground">
+                      CSS
+                    </h3>
+                  </div>
+                  <pre className="p-4 overflow-auto">
+                    <code>{code.css}</code>
+                  </pre>
+                  <div className="p-4 bg-muted/50 border-b">
+                    <h3 className="font-sans font-semibold text-foreground">
+                      JavaScript
+                    </h3>
+                  </div>
+                  <pre className="p-4 overflow-auto">
+                    <code>{code.javascript}</code>
+                  </pre>
                 </div>
-                <pre className="p-4 overflow-auto">
-                  <code>{code.html}</code>
-                </pre>
-                <div className="p-4 bg-muted/50 border-b">
-                  <h3 className="font-sans font-semibold text-foreground">
-                    CSS
-                  </h3>
-                </div>
-                <pre className="p-4 overflow-auto">
-                  <code>{code.css}</code>
-                </pre>
-                <div className="p-4 bg-muted/50 border-b">
-                  <h3 className="font-sans font-semibold text-foreground">
-                    JavaScript
-                  </h3>
-                </div>
-                <pre className="p-4 overflow-auto">
-                  <code>{code.javascript}</code>
-                </pre>
-              </div>
-            )}
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="preview" className="m-0 h-full">
             <div className="w-full h-full bg-background flex items-center justify-center p-4">
